@@ -1,0 +1,20 @@
+{
+    "name": "inium/php-security-crypto",
+    "description": "A simple class wrpping module of AES and bcrypt.",
+    "type": "library",
+    "keywords": ["php", "aes", "bcrypt"],
+    "require": {
+        "php": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "inlee",
+            "email": "einable@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
