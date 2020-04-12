@@ -17,10 +17,13 @@ final class BcryptTest extends TestCase {
      * @dataProvider additionProvider
      */
     public function testHashVerify(string $text) {
-        $hash = Bcrypt::Hash($text);
-        $verified = Bcrypt::Verify($text, $hash);
+        $bcrypt = new Bcrypt();
+        $hash = $bcrypt->hash($text);
+        $verified = $bcrypt->verify($text, $hash);
 
         $this->assertTrue($verified);
+
+        $bcrypt = null;
     }
 
     /**
