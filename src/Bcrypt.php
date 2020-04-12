@@ -8,12 +8,19 @@ namespace Inium\Security\Crypto;
 final class Bcrypt {
 
     /**
+     * Constructor
+     */
+    public function __construct() {
+
+    }
+
+    /**
      * Get password from plain text.
      *
      * @param string $text  A text which will be encrypted to password.
      * @return string|bool  Encrypted password or false if failed.
      */
-    public static function hash(string $text) {
+    public function hash(string $text) {
         $ret = password_hash($text, PASSWORD_BCRYPT);
         return $ret;
     }
