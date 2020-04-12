@@ -16,5 +16,13 @@
             "email": "einable@gmail.com"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "autoload": {
+        "classmap": [
+            "src/"
+        ],
+        "psr-4" : {
+            "Inium\\Security\\Crypto\\" : "src/"
+        }
+    }
 }
