@@ -18,11 +18,15 @@ final class Bcrypt {
      * Get password from plain text.
      *
      * @param string $text  A text which will be encrypted to password.
-     * @return string|bool  Encrypted password or false if failed.
+     * @return string  Encrypted password or false if failed.
      */
-    public function hash(string $text) {
-        $ret = password_hash($text, PASSWORD_BCRYPT);
-        return $ret;
+    public function hash(string $text): string {
+        $hash = password_hash($text, PASSWORD_BCRYPT);
+        if  (!$hash) {
+            throw new \Exception('Bcrypt hash fail.');
+        }
+
+        return $hash;
     }
 
     /**
