@@ -22,7 +22,7 @@ final class Bcrypt {
      */
     public function hash(string $text): string {
         $hash = password_hash($text, PASSWORD_BCRYPT);
-        if  (!$hash) {
+        if (!$hash) {
             throw new \Exception('Bcrypt hash fail.');
         }
 
