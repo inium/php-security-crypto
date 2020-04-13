@@ -2,6 +2,9 @@
 
 namespace Inium\Security\Crypto;
 
+/**
+ * AES encryption / decryption.
+ */
 final class AES {
 
     /**
@@ -54,14 +57,13 @@ final class AES {
                                 string $cipherMethod = 'aes-256-cbc',
                                 bool $useGzCompression = false) {
 
-        // If cipher method is in openssl_get_cipher_methods(),
-        // set params to member variables for using cipher methods.
+        // If $cipherMethod param is valid, set params to members.
         if (in_array($cipherMethod, openssl_get_cipher_methods())) {
             $this->_key = $key;
             $this->_cipherMethod = $cipherMethod;
             $this->_useGzCompression = $useGzCompression;
         }
-        // Otherwise, throw a exception.
+        // Else throw a exception.
         else {
             throw new \Exception('Invalid cipher method.');
         }
@@ -81,8 +83,6 @@ final class AES {
         // If use gzip compression.
         if ($this->_useGzCompression) {
             $plainText = gzcompress($plainText);
-
-            // If gzip compression failed, throw a exception.
             if (!$plainText) {
                 throw new \Exception('Fail to gzcompress.');
             }
@@ -95,18 +95,14 @@ final class AES {
                                       OPENSSL_RAW_DATA,
                                       $iv);
 
-        // Create hmac for a encrypt text integrity
-        // It will use in a decrypt process.
+        // Create hmac for a encrypt text integrity it will use decrypt process.
         $hmac = hash_hmac(self::HASH_HMAC_ALGO, $cipherText, $this->_key, true);
-
-        // If hmac creation failed, throw a exception.
         if (!$hmac) {
             throw new \Exception('Fail to create hmac.');
         }
 
         // base64 encode
         $base64 = base64_encode($iv.$hmac.$cipherText);
-
         return $base64;
     }
 
@@ -118,41 +114,28 @@ final class AES {
      * @see https://www.php.net/manual/en/function.openssl-encrypt.php
      */
     public function decrypt(string $cipherText): string {
-        // Decode base64 encoded cipher text.
+        // base64 decode
         $cipherText = base64_decode($cipherText);
 
         // Extract [iv, hmac, cipher_text] elements from a cipher text.
         $elem = $this->extractCipherElements($cipherText);
 
-        // Decrypt cipher text to plain text.
+        // Decrypt cipher_text in $elem.
         $plainText = openssl_decrypt($elem['cipher_text'],
                                      $this->_cipherMethod,
                                      $this->_key,
                                      OPENSSL_RAW_DATA,
                                      $elem['iv']);
 
-        // Create a hmac for a verification of cipher text.
-        // It will compare to hmac in $elem extracted from a cipher text.
-        $hmac = hash_hmac(self::HASH_HMAC_ALGO,
-                          $elem['cipher_text'],
-                          $this->_key,
-                          true);
-
-        // If hmac creation failed, throw a exception.
-        if (!$hmac) {
-            throw new \Exception('Fail to create hmac from cipher text.');
-        }
-
-        // Verification between hmac in cipher text($elem) and created hmac.
-        if (!hash_equals($elem['hmac'], $hmac)) {
-            throw new \Exception('Fail to decrypt hmac equal comparison.');
+        // Check integrity
+        $integrity = $this->checkIntegrity($elem['cipher_text'], $elem['hmac']);
+        if (!$integrity) {
+            throw new \Exception('Fail to integrity test.');
         }
 
         // If use gzcompress, unip.
         if ($this->_useGzCompression) {
             $plainText = gzuncompress($plainText);
-
-            // If unzip failed, throw a exception.
             if (!$plainText) {
                 throw new \Exception('Fail to gzuncompress.');
             }
@@ -171,7 +154,6 @@ final class AES {
         $ivlen = openssl_cipher_iv_length($this->_cipherMethod);
         $iv = openssl_random_pseudo_bytes($ivlen);
 
-        // If IV creation failed, throw a exception.
         if (!$iv) {
             throw new \Exception('Fail to openssl_random_pseudo_bytes().');
         }
@@ -182,8 +164,8 @@ final class AES {
     /**
      * Extract cipher text elements.
      * The cipher text consists of iv, hmac, cipher text.
-     *  - "iv" is for use cipher text encryption.
-     *  - "hmac" is used for verifying the cipher text is valid or not.
+     *  - "iv" s used for the cipher text encryption.
+     *  - "hmac" is used for checking the cipher text integrity when decryption.
      *  - "cipher text" is a encrypted text.
      *
      * @param string $cipherText    Cipher text.
@@ -196,7 +178,6 @@ final class AES {
         $hmac = substr($cipherText, $ivLen, self::SHA2_LENGTH);
         $cipherText = substr($cipherText, $ivLen + self::SHA2_LENGTH);
 
-        // If one of IV, hmac, cipher text extraction failed, throw a exception.
         if (!$iv || !$hmac || !$cipherText) {
             throw new \Exception('Fail to extract cipher elements.');
         }
@@ -208,5 +189,29 @@ final class AES {
         ];
 
         return $elem;
+    }
+
+    /**
+     * Check the cipher text has integrity (valid) or not.
+     *
+     * @param string $cipherText
+     * @param string $hmac
+     * @return boolean
+     */
+    private function checkIntegrity(string $cipherText, string $hmac): bool {
+        // Create a hmac from a $cipherText for a integrity check in below.
+        $calcHmac = hash_hmac(self::HASH_HMAC_ALGO,
+                              $cipherText,
+                              $this->_key,
+                              true);
+        if (!$calcHmac) {
+            throw new \Exception('Fail to create hmac from cipher text.');
+        }
+
+        // Do verification between $calcHmac and $hmac.
+        // If equal, the cipher text has integrity.
+        $ret = hash_equals($hmac, $calcHmac);
+
+        return $ret;
     }
 }
