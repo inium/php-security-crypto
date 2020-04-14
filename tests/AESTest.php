@@ -67,11 +67,12 @@ class AESTest extends TestCase {
         for ($i = 0; $i < $methodCount; $i++) {
             $bit = (int)preg_replace('/[^0-9]/', '', $string);
             $strLen = $bit / 8;
+            $useGzCompression = $i / 2 == 0 ? true : false;
 
             $elem = [
                 $this->generateRandomString($strLen),
                 $cipherMethods[$i],
-                true,
+                $useGzCompression,
                 $plainText
             ];
 
